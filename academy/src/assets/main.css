@@ -1,0 +1,541 @@
+:root {
+  /* Colors - unchanged */
+  --primary-sec-color:  #087990;
+  --primary-color:#06677e;
+  --secondary-color: #444;
+  --background-color: #fff;
+  --light-accent: rgba(255, 255, 255, 0.2);
+  --gray-bg: #f8f9fa !important;
+  --border-color: #ddd;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --success-color: #28a745;
+  /* Typography - reduced by ~10% */
+  --font-heading: 'Poppins', sans-serif;
+  --font-body: 'Poppins', sans-serif;
+  --fs-xs: 0.675rem;    /* reduced from 0.75rem */
+  --fs-sm: 0.79rem;     /* reduced from 0.875rem */
+  --fs-base: 0.9rem;    /* reduced from 1rem */
+  --fs-md: 1.01rem;     /* reduced from 1.125rem */
+  --fs-lg: 1.1rem;    /* reduced from 1.25rem */
+  --fs-xl: 1.35rem;     /* reduced from 1.5rem */
+  --fs-2xl: 1.575rem;   /* reduced from 1.75rem */
+  --fs-3xl: 1.8rem;     /* reduced from 2rem */
+  --fs-4xl: 2.25rem;    /* reduced from 2.5rem */
+}
+
+/* Added height: 100% to html for full height pages */
+/* Reset any potential body/html margins */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-x: hidden;
+  background-color: var(--gray-bg);
+}
+
+/* Background animation */
+.background-animation {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+.wave {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  opacity: 0.36; /* 90% of 0.4 */
+  border-radius: 40%;
+  bottom: -10%;
+  left: -50%;
+  background: rgba(105, 179, 209, 0.27); /* 90% of 0.3 */
+  animation: wave 45s infinite linear;
+}
+
+.wave1 {
+  animation-duration: 45s;
+  opacity: 0.18; /* 90% of 0.2 */
+}
+
+.wave2 {
+  animation-duration: 40s;
+  animation-delay: -10s;
+  opacity: 0.09; /* 90% of 0.1 */
+  background: rgba(156, 213, 240, 0.36); /* 90% of 0.4 */
+}
+
+.wave3 {
+  animation-duration: 50s;
+  animation-delay: -5s;
+  opacity: 0.135; /* 90% of 0.15 */
+  background: rgba(255, 255, 255, 0.18); /* 90% of 0.2 */
+}
+
+.wave4 {
+  animation-duration: 60s;
+  opacity: 0.072; /* 90% of 0.08 */
+  background: rgba(126, 148, 228, 0.27); /* 90% of 0.3 */
+}
+
+@keyframes wave {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Particles */
+.particle-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.particle {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.54); /* 90% of 0.6 */
+  border-radius: 50%;
+  animation: float-particle 30s ease-in-out infinite;
+}
+
+@keyframes float-particle {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  25% {
+    transform: translateY(-27px) translateX(13.5px); /* 90% of 30px and 15px */
+  }
+  50% {
+    transform: translateY(-13.5px) translateX(27px); /* 90% of 15px and 30px */
+  }
+  75% {
+    transform: translateY(18px) translateX(-18px); /* 90% of 20px */
+  }
+}
+
+/* Added to ensure all container elements can use full height */
+#root, .app, main, .page-wrapper {
+  min-height: 100%;
+  height: 100%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 600 !important;
+  color: var(--primary-color) !important;
+  /* No width restriction */
+}
+
+/* Webkit Browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 9px;  /* reduced from 10px */
+  height: 18px; /* reduced from 20px */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--primary-color);
+  border-radius: 9px; /* reduced from 10px */
+}
+
+::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+/* Firefox */
+scrollbar {
+  width: 9px; /* reduced from 10px */
+}
+
+scrollbar-thumb {
+  background-color: var(--primary-color);
+  border-radius: 9px; /* reduced from 10px */
+}
+
+scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+.header-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 1.8px 9px var(--shadow-color); /* reduced from 0 2px 10px */
+  /* Full width maintained */
+}
+
+.navbar-custom {
+  background-color: var(--gray-bg);
+  color: var(--secondary-color);
+  padding: 0.45rem 0;
+}
+
+.navbar-brand-logo {
+  height: 36px;  /* reduced from 40px */
+  width: auto;
+  object-fit: contain;
+  margin-right: 9px; /* reduced from 10px */
+  vertical-align: middle;
+}
+
+.navbar-brand-custom {
+  color: var(--secondary-color) !important;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--fs-xl);
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+/* Center the nav items */
+.navbar-nav-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  /* Full width maintained */
+}
+
+.nav-item-custom {
+  position: relative;
+}
+
+.nav-link {
+  color: var(--secondary-color) !important;
+  font-family: var(--font-heading) !important;
+  font-size: var(--fs-xsm) !important;
+  padding: 0.45rem 0.54rem !important; /* reduced from 0.5rem 0.6rem */
+  margin: 0 0.225rem !important; /* reduced from 0.25rem */
+}
+
+.nav-link-custom {
+  color: var(--secondary-color);
+  font-family: var(--font-heading);
+  font-size: var(--fs-sm) !important;
+  font-weight: 500 !important;
+  padding: 0.45rem 0.54rem !important; /* reduced from 0.5rem 0.6rem */
+  margin: 0 0.225rem; /* reduced from 0.25rem */
+  position: relative;
+}
+
+.nav-link-custom::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 1.8px; /* reduced from 2px */
+  bottom: 0;
+  left: 50%;
+  background-color: var(--primary-color);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.nav-link-custom.active::after {
+  width: 80%; /* reduced from 80% */
+}
+
+.log {
+  color: white;
+  text-decoration: none;
+}
+
+.log:hover {
+  color: white;
+  text-decoration: none;
+}
+
+.nav-link-custom:hover {
+  color: var(--primary-color) !important;
+}
+
+.nav-link-custom.active,
+.nav-link-custom:active {
+   color: var(--primary-color) !important;
+   font-weight: 500;
+}
+
+.auth-buttons {
+  display: flex;
+  align-items: center;
+  transform: scale(0.9);
+}
+
+.sign-btn {
+  background-color: var(--primary-color);
+  color: var(--background-color) !important;
+  border: none;
+  padding: 4.5px 11.7px; /* reduced from 5px 13px */
+  border-radius: 4.5px; /* reduced from 5px */
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: var(--font-heading);
+  letter-spacing: 0.45px; /* reduced from 0.5px */
+}
+
+.sign-btn:hover {
+  background-color: #06677e;
+  transform: translateY(-1.8px); /* reduced from -2px */
+  box-shadow: 0 4.5px 13.5px rgba(6, 103, 126, 0.3); /* reduced from 0 5px 15px */
+}
+
+.navbar-toggler:focus,
+.navbar-toggler:hover {
+    outline: none !important;
+    box-shadow: none !important;
+    background: none !important;
+}
+
+.course-slider-container {
+  background-color: var(--primary-color);
+  color: var(--background-color);
+  overflow: hidden;
+  position: relative;
+  width: 100%; /* Full width maintained */
+  border-bottom: none;
+  padding: 0;
+}
+
+.course-slider-wrapper {
+  display: flex;
+  width: max-content;
+  animation: slideRight 30s linear infinite;
+  height: 90%; /* Height reduced */
+}
+
+.course-slider-wrapper:hover {
+  animation-play-state: paused;
+}
+
+@keyframes slideRight {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.course-item {
+  flex: 0 0 auto;
+  padding: 10.8px 18px; /* reduced from 12px 20px */
+  background-color: var(--primary-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  border-right: 0.9px solid rgba(255, 255, 255, 0.1); /* reduced from 1px */
+  display: flex;
+  align-items: center;
+  height: 90%; /* Height reduced */
+}
+
+.course-item:hover {
+  background-color: var(--background-color);
+  color: var(--primary-color);
+}
+
+/* Fix the hero section with a more specific approach */
+.hero-section {
+  background-color: var(--gray-bg);
+  color: var(--secondary-color);
+  padding: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 106px); /* Using min-height instead of height */
+  width: 100%;
+  margin: 0;
+  position: relative; /* Establish positioning context */
+  flex: 1; /* Take up available space */
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.hero-section + * {
+  margin-top: 0 !important;
+}
+
+#app, .main-container {
+  padding: 0;
+  margin: 0;
+  overflow-x: hidden;
+
+}
+
+/* #app {
+  transform: scale(0.88);
+  transform-origin: top left;
+  width: 113.6364%;
+} */
+
+
+/* Make sure container doesn't add extra space */
+.hero-section .container {
+  padding: 1.8rem;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.search-container {
+  position: relative;
+  max-width: 450px; /* reduced from 500px */
+  width: 90%; /* Percentage width kept for responsiveness */
+  margin: 1.8rem auto; /* reduced from 2rem */
+}
+
+.search-input {
+  width: 100%; /* Full width maintained */
+  padding: 10.8px 18px; /* reduced from 12px 20px */
+  padding-right: 45px; /* reduced from 50px */
+  font-size: var(--fs-base);
+  border: 1.8px solid var(--primary-color); /* reduced from 2px */
+  border-radius: 27px; /* reduced from 30px */
+  outline: none;
+  font-family: var(--font-body);
+}
+
+.search-icon {
+  position: absolute;
+  right: 13.5px; /* reduced from 15px */
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary-color);
+  font-size: var(--fs-lg);
+  cursor: pointer;
+}
+
+.get-started-btn {
+  background-color: var(--primary-color);
+  color: var(--background-color);
+  border: none;
+  padding: 7.2px 14.4px; /* reduced from 8px 16px */
+  border-radius: 4.5px; /* reduced from 5px */
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  font-family: var(--font-heading);
+  letter-spacing: 0.45px; /* reduced from 0.5px */
+}
+
+.get-started-btn:hover {
+  background-color: var(--primary-sec-color);
+  transform: translateY(-1.8px); /* reduced from -2px */
+  box-shadow: 0 4.5px 13.5px rgba(6, 103, 126, 0.3); /* reduced from 0 5px 15px */
+}
+
+.popular-courses {
+  background-color: var(--gray-bg);
+  width: 100%; /* Full width maintained */
+}
+
+.section-title {
+  font-size: var(--fs-2xl);
+  text-align: start !important;
+  margin-bottom: 2.25rem; /* reduced from 2.5rem */
+  font-weight: 700;
+  color: var(--secondary-color);
+}
+
+.main-footer {
+  background-color: var(--secondary-color);
+  color: var(--background-color);
+  padding: 1.35rem 0; /* reduced from 1.5rem */
+  text-align: center;
+  font-size: var(--fs-sm);
+  width: 100%; /* Full width maintained */
+}
+
+.tutorial-section {
+  background-color: var(--gray-bg);
+  border-left: 3.6px solid var(--primary-color); /* reduced from 4px */
+  padding: 1.35rem; /* reduced from 1.5rem */
+  margin: 1.8rem 0; /* reduced from 2rem */
+  width: 100%; /* Full width maintained */
+}
+
+.border-start{
+  background-color: var(--gray-bg);
+  border-left: 3.6px solid var(--primary-color); /* reduced from 4px */
+  padding: 1.35rem; /* reduced from 1.5rem */
+  margin: 1.8rem 0; /* reduced from 2rem */
+}
+
+.tutorial-title {
+  color: var(--primary-color);
+  font-size: var(--fs-xl);
+  margin-bottom: 0.9rem; /* reduced from 1rem */
+}
+
+.example-code {
+  background-color: var(--gray-bg);
+  padding: 0.9rem; /* reduced from 1rem */
+  border-radius: 4.5px; /* reduced from 5px */
+  margin: 0.9rem 0; /* reduced from 1rem */
+  font-family: monospace;
+  font-size: var(--fs-sm);
+  width: 100%; /* Full width maintained */
+}
+
+/* Added to ensure content areas can use full height */
+.content-area {
+  min-height: 100%;
+}
+
+@media (max-width: 768px) {
+  .dashboard-content {
+   padding: 7px !important;
+  }
+}
+
+
+/* For mobile responsiveness */
+@media (max-width: 992px) {
+  .navbar-nav-center {
+    position: relative;
+    left: 0;
+    transform: none;
+    width: 100%; /* Full width maintained */
+  }
+
+  .hero-title {
+    font-size: var(--fs-3xl);
+  }
+
+  .auth-buttons {
+    justify-content: center;
+    display: block;
+    margin-left: 0.81rem !important; /* reduced from 0.9rem */
+  }
+
+  .sign-btn {
+    margin: 2.7px 4.5px; /* reduced from 3px 5px */
+  }
+
+  .nav-link-custom {
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .nav-link-custom::after {
+    display: none;
+  }
+
+  .nav-link-custom:hover::after,
+  .nav-link-custom.active::after {
+    width: 19.8%; /* reduced from 22% */
+  }
+}
+

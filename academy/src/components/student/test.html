@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - Lesson Completion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+        .info { color: #00f; }
+    </style>
+</head>
+<body>
+    <h1>🧪 API Test - Lesson Completion</h1>
+
+    <div class="test-box">
+        <h2>Test Configuration</h2>
+        <label>Lesson ID:</label>
+        <input type="number" id="lessonId" placeholder="e.g., 230" value="230">
+
+        <label>Score:</label>
+        <input type="number" id="score" placeholder="e.g., 3" value="3">
+
+        <label>Total Questions:</label>
+        <input type="number" id="totalQuestions" placeholder="e.g., 3" value="3">
+
+        <label>Access Token (from localStorage):</label>
+        <input type="text" id="accessToken" placeholder="Paste your access token">
+
+        <button onclick="testCompletion()">🚀 Test Complete Lesson API</button>
+        <button onclick="clearLog()">🗑️ Clear Log</button>
+    </div>
+
+    <div class="test-box">
+        <h2>📊 Response Log</h2>
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            logEl.innerHTML += `<span class="${colorClass}">[${timestamp}] ${message}</span>\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        async function testCompletion() {
+            const lessonId = document.getElementById('lessonId').value;
+            const score = document.getElementById('score').value;
+            const totalQuestions = document.getElementById('totalQuestions').value;
+            const accessToken = document.getElementById('accessToken').value;
+
+            if (!lessonId) {
+                log('❌ Please enter a lesson ID', 'error');
+                return;
+            }
+
+            if (!accessToken) {
+                log('❌ Please enter an access token', 'error');
+                log('💡 Get it from localStorage in your app console: localStorage.getItem("access_token")', 'info');
+                return;
+            }
+
+            log('================================================================================');
+            log('🔵 STARTING API TEST', 'info');
+            log('================================================================================');
+            log(`Lesson ID: ${lessonId}`);
+            log(`Score: ${score}/${totalQuestions}`);
+            log(`API URL: http://localhost:8000/api/student/lessons/${lessonId}/complete/`);
+
+            try {
+                log('\n📤 Sending POST request...');
+
+                const response = await fetch(`http://localhost:8000/api/student/lessons/${lessonId}/complete/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify({
+                        reflection: 'API test completion',
+                        score: parseInt(score),
+                        total_questions: parseInt(totalQuestions)
+                    })
+                });
+
+                log(`\n📥 Response status: ${response.status} ${response.statusText}`);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    log('❌ REQUEST FAILED', 'error');
+                    log(JSON.stringify(errorData, null, 2), 'error');
+                    return;
+                }
+
+                const data = await response.json();
+                log('\n✅ REQUEST SUCCESSFUL', 'success');
+                log('================================================================================');
+
+                log('\n📋 Response Keys:');
+                log(Object.keys(data).join(', '));
+
+                log('\n📊 Completion Data:');
+                log(`  - Completed: ${data.completed}`);
+                log(`  - Score: ${data.score}`);
+                log(`  - Total Questions: ${data.total_questions}`);
+                log(`  - Course Progress: ${data.course_progress}%`);
+
+                log('\n🔍 Updated Lessons:');
+                if (data.updated_lessons && Array.isArray(data.updated_lessons)) {
+                    log(`  - Found: YES ✅`, 'success');
+                    log(`  - Count: ${data.updated_lessons.length}`);
+                    log(`  - Completed: ${data.updated_lessons.filter(l => l.completed).length}`);
+
+                    log('\n📝 All Lessons:');
+                    data.updated_lessons.forEach((lesson, idx) => {
+                        const emoji = lesson.completed ? '✅' : '⭕';
+                        log(`  ${emoji} ${idx + 1}. [ID: ${lesson.id}] ${lesson.title}`);
+                    });
+
+                    // Find current lesson
+                    const currentLesson = data.updated_lessons.find(l => l.id == lessonId);
+                    if (currentLesson) {
+                        log(`\n⭐ Current Lesson (ID: ${lessonId}):`, 'success');
+                        log(`  - Title: ${currentLesson.title}`);
+                        log(`  - Completed: ${currentLesson.completed}`);
+                        log(`  - Type: ${typeof currentLesson.completed}`);
+                    }
+                } else {
+                    log(`  - Found: NO ❌`, 'error');
+                    log('  ⚠️ Backend is NOT returning updated_lessons array!', 'error');
+                }
+
+                log('\n================================================================================');
+                log('✅ TEST COMPLETE', 'success');
+                log('================================================================================\n');
+
+            } catch (error) {
+                log('\n❌ EXCEPTION OCCURRED', 'error');
+                log(error.message, 'error');
+                log(error.stack, 'error');
+            }
+        }
+
+        // Auto-fill token from localStorage if available
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('access_token') || localStorage.getItem('token');
+            if (token) {
+                document.getElementById('accessToken').value = token;
+                log('✅ Found access token in localStorage', 'success');
+            } else {
+                log('⚠️ No access token found in localStorage', 'error');
+                log('💡 Please log in to your app and get the token', 'info');
+            }
+        });
+    </script>
+</body>
+</html>
