@@ -49,7 +49,7 @@ app.use(Toast, {
 app.use(router)
 
 // Set base URL for axios
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://web-production-02329.up.railway.app/'
 axios.defaults.withCredentials = false
 
 // ✅ FIXED: Less verbose axios logging
