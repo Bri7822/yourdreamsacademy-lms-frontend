@@ -4,7 +4,7 @@ import axios from 'axios'
 import { useGuestStore } from '@/stores/guest'
 
 
-const API_URL = 'https://web-production-02329.up.railway.app/api/auth/'
+const API_URL = 'https://yourdreamsacademy.up.railway.app/api/auth/'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
