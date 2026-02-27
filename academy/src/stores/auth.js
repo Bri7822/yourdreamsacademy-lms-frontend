@@ -4,7 +4,7 @@ import axios from 'axios'
 import { useGuestStore } from '@/stores/guest'
 
 
-const API_URL = 'https://yourdreamsacademy.pythonanywhere.comapi/auth/'
+const API_URL = 'https://yourdreamsacademy.pythonanywhere.com/api/auth/'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -89,8 +89,8 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
 
       try {
-        const response = await axios.post('/api/auth/login/', credentials)
-        const { access, refresh, user } = response.data
+        const response = await axios.post(`${API_URL}login/`, credentials)
+        const {access, refresh, user } = response.data
 
         // Validate user data
         if (!user?.profile?.user_type) {
