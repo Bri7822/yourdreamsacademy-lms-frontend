@@ -2,7 +2,7 @@ import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
 export const apiClient = axios.create({
-  baseURL: 'https://yourdreamsacademy.up.railway.app/api',
+  baseURL: 'https://yourdreamsacademy.pythonanywhere.com/api',
   timeout: 10000,
 })
 
