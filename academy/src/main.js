@@ -49,7 +49,7 @@ app.use(Toast, {
 app.use(router)
 
 // Set base URL for axios
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://yourdreamsacademy.pythonanywhere.com/'
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://yourdreamsacademy.pythonanywhere.com'
 axios.defaults.withCredentials = false
 
 // ✅ FIXED: Less verbose axios logging
