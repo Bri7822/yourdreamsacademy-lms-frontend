@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-const API_BASE = 'https://yourdreamsacademy.pythonanywhere.com'
+const API_BASE = 'https://yourdreamsacademy.pythonanywhere.com/api'
 
 export const useLessonStore = defineStore('lesson', {
   state: () => ({
