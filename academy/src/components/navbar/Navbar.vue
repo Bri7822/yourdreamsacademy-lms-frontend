@@ -682,6 +682,18 @@ onUnmounted(() => {
   }
 }
 
+.navbar-brand-custom {
+  padding: 0;
+  margin-right: 1rem;
+}
+
+.navbar-brand-logo {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
 .navbar-toggler {
   z-index: 5002;
 }
