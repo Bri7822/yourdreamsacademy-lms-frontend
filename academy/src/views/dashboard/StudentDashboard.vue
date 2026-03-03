@@ -1882,11 +1882,6 @@ input:checked + .slider:before {
     .card-stat {
         font-size: 1rem;
     }
-
-    
-    .dashboard-content {
-        overflow-y: hidden !important;
-    }
 }
 
 @media (max-width: 576px) {
