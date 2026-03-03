@@ -2527,9 +2527,9 @@ onUnmounted(() => {
 
 /* Responsive adjustments for the More Courses button */
 @media (max-width: 768px) {
-  .more-courses-container {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
+  .more-courses-container{
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
   }
 }
 
