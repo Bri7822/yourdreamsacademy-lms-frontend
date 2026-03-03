@@ -1860,7 +1860,7 @@ input:checked + .slider:before {
     } */
 
     .dashboard-main{
-       overflow-y: none !important;
+       overflow-y: hidden !important;
     }
 
     .cards-container {
