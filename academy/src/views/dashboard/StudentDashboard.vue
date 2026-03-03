@@ -187,7 +187,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  /* overflow-y: auto; */
+  overflow-y: auto;
 }
 
 .dashboard-sidebar.collapsed + .dashboard-main {
