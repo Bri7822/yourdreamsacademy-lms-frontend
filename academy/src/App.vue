@@ -115,7 +115,7 @@ watch(() => guestStore.shouldRedirect, (shouldRedirect) => {
   font-family: 'Courier New', monospace;
   font-size: 11px;
   max-height: 80vh;
-  /* overflow-y: auto; */
+  overflow-y: auto;
 }
 
 .debug-info h4 {
