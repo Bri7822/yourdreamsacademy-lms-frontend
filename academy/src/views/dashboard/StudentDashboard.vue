@@ -1854,13 +1854,9 @@ input:checked + .slider:before {
     .sidebar-nav a {
     padding: 7.8px 12px;
     }
-/* 
-    .dashboard-content{
-        overflow-y: none !important;
-    } */
 
-    .dashboard-main{
-       overflow-y: hidden !important;
+    .dashboard-content{
+        overflow-y: hidden !important;
     }
 
     .cards-container {
