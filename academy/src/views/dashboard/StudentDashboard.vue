@@ -1853,7 +1853,15 @@ input:checked + .slider:before {
 
     .sidebar-nav a {
     padding: 7.8px 12px;
-}
+    }
+/* 
+    .dashboard-content{
+        overflow-y: none !important;
+    } */
+
+    .dashboard-main{
+       overflow-y: none !important;
+    }
 
     .cards-container {
         grid-template-columns: 1fr;
