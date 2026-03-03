@@ -187,7 +187,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow-y: auto;
+  /* overflow-y: auto; */
 }
 
 .dashboard-sidebar.collapsed + .dashboard-main {
@@ -1853,11 +1853,7 @@ input:checked + .slider:before {
 
     .sidebar-nav a {
     padding: 7.8px 12px;
-    }
-
-    .dashboard-content{
-        overflow-y: hidden !important;
-    }
+}
 
     .cards-container {
         grid-template-columns: 1fr;
