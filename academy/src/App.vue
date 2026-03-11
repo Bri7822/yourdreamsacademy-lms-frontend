@@ -1,24 +1,5 @@
 <template>
   <div id="app">
-    <!-- Enhanced Debug Info -->
-    <div v-if="showDebug" class="debug-overlay">
-      <div class="debug-info">
-        <h4>🔍 Router Debug</h4>
-        <p><strong>Current Path:</strong> {{ route.path }}</p>
-        <p><strong>Route Name:</strong> {{ route.name }}</p>
-        <p><strong>Full Route Meta:</strong> {{ JSON.stringify(route.meta, null, 2) }}</p>
-        <p><strong>Is Guest Route:</strong> {{ isGuestRoute }}</p>
-        <p><strong>Is Dashboard Route:</strong> {{ isDashboardRoute }}</p>
-        <p><strong>Should Hide Navbar:</strong> {{ shouldHideNavbar }}</p>
-        <p><strong>Navbar Visible:</strong> {{ !shouldHideNavbar }}</p>
-        <p><strong>Footer Visible:</strong> {{ !shouldHideNavbar }}</p>
-        <hr>
-        <button @click="showDebug = !showDebug" class="debug-toggle">
-          {{ showDebug ? 'Hide Debug' : 'Show Debug' }}
-        </button>
-      </div>
-    </div>
-
     <!-- NAVBAR - Only show for non-dashboard routes -->
     <Navbar v-if="shouldShowNavbar" />
     <GlobalSearch />
@@ -101,64 +82,6 @@ watch(() => guestStore.shouldRedirect, (shouldRedirect) => {
 </script>
 
 <style>
-/* Your existing styles plus debug styles */
-.debug-overlay {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background: rgba(0, 0, 0, 0.95);
-  color: white;
-  padding: 15px;
-  border-radius: 8px;
-  z-index: 9999;
-  max-width: 500px;
-  font-family: 'Courier New', monospace;
-  font-size: 11px;
-  max-height: 80vh;
-  /* overflow-y: auto; */
-}
-
-.debug-info h4 {
-  margin: 0 0 10px 0;
-  color: #4CAF50;
-  border-bottom: 1px solid #4CAF50;
-  padding-bottom: 5px;
-}
-
-.debug-info p {
-  margin: 4px 0;
-  line-height: 1.3;
-}
-
-.debug-info hr {
-  border: none;
-  border-top: 1px solid #555;
-  margin: 8px 0;
-}
-
-.route-history {
-  background: rgba(255,255,255,0.1);
-  padding: 4px;
-  margin: 2px 0;
-  border-radius: 3px;
-  font-size: 10px;
-}
-
-.debug-toggle {
-  background: #4CAF50;
-  color: white;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 3px;
-  cursor: pointer;
-  margin: 2px;
-  font-size: 10px;
-}
-
-.debug-toggle:hover {
-  background: #45a049;
-}
-
 :root {
   --primary-sec-color:  #087990;
   --primary-color:#06677e;
