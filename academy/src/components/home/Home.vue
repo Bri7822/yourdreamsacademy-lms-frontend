@@ -72,7 +72,7 @@
         </div>
       </div>
 
-      <button class="get-started-btn" @click="$router.push('/student/courses/')">
+      <button class="get-started-btn" @click="$router.push('/courses/')">
         Explore Courses
       </button>
     </div>
@@ -1076,7 +1076,21 @@ const handleSearchBlur = () => {
 }
 
 const performSearch = async () => {
-this.$router.push('/student/courses/')
+  if (!searchInput.value.trim()) return
+
+  try {
+    if (searchStore && typeof searchStore.addToRecentSearches === 'function') {
+      searchStore.addToRecentSearches(searchInput.value)
+    }
+
+    router.push({
+      name: 'search-results',
+      query: { q: searchInput.value },
+    })
+  } catch (error) {
+    console.error('Search navigation error:', error)
+    toast.error('Failed to perform search')
+  }
 }
 
 const handleQuickSearch = (query) => {
