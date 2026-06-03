@@ -553,13 +553,16 @@ const lessonForm = ref({
 
 onMounted(async () => {
   try {
-    await fetchCourses()
+    await fetchCourses()  // wait for courses to load
 
-    if (route.params.courseSlug) {
-      const course = currentCourse.value
+    // NOW check the route param
+    if (route.params.courseSlug && courses.value.length > 0) {
+      const course = courses.value.find(c =>
+        generateCourseSlug(c.title) === route.params.courseSlug
+      )
       if (course) {
         await setActiveCourse(course)
-      } else if (courses.value.length > 0) {
+      } else {
         await handleCourseClick(courses.value[0])
       }
     } else if (courses.value.length > 0) {
@@ -638,9 +641,10 @@ const sortedCourses = computed(() => {
 })
 
 const sortedLessons = computed(() => {
-  return [...lessons.value].sort((a, b) => {
-    return sortAsc.value ? a.order - b.order : b.order - a.order
-  })
+  if (!Array.isArray(lessons.value)) return []   // ← guard
+  return [...lessons.value].sort((a, b) =>
+    sortAsc.value ? a.order - b.order : b.order - a.order
+  )
 })
 
 const filteredLessons = computed(() => {
@@ -709,21 +713,19 @@ const fetchLessons = async () => {
 
   try {
     const isInitialLoad = lessons.value.length === 0
-    if (isInitialLoad) {
-      loading.value = true
-    }
+    if (isInitialLoad) loading.value = true
 
     const response = await axios.get(`/api/admin/courses/${activeCourseId.value}/lessons/`)
-    lessons.value = response.data
+    const data = response.data
+    // Normalize: handle array or paginated {results:[]} shape
+    lessons.value = Array.isArray(data) ? data : (data.results ?? [])
 
   } catch (error) {
     console.error('Error fetching lessons:', error)
     toast.error('Failed to load lessons')
-    lessons.value = []
+    lessons.value = []   // already correct, but now the try block is also safe
   } finally {
-    if (loading.value) {
-      loading.value = false
-    }
+    loading.value = false
   }
 }
 
@@ -773,6 +775,10 @@ const toggleLessonStatus = async (lesson) => {
 }
 
 const toggleLessonForm = () => {
+  if (!activeCourseId.value) {
+    toast.warning('Please select a course first')
+    return
+  }
   showLessonForm.value = !showLessonForm.value
   if (showLessonForm.value) {
     initializeForm()
@@ -810,6 +816,10 @@ const handleVideoUrlSaved = (data) => {
 }
 
 const handleLessonSubmit = async () => {
+  if (!activeCourseId.value) {
+    toast.error('No course selected')
+    return
+  }
   if (!validateLessonForm()) return
 
   formSubmitting.value = true
@@ -907,12 +917,14 @@ const confirmDeleteLesson = async (lesson) => {
 const fetchCourses = async () => {
   try {
     loading.value = true
-    const response = await axios.get('/api/admin/courses/')
-    courses.value = response.data
+    const response = await axios.get('/api/admin/courses/')  // ← response first
+    const data = response.data                               // ← then data
+    courses.value = Array.isArray(data) ? data : (data.results ?? [])
   } catch (error) {
     console.error('Error fetching courses:', error)
     coursesError.value = 'Failed to load courses'
     toast.error('Failed to load courses')
+    courses.value = []
   } finally {
     loading.value = false
   }
@@ -1038,7 +1050,7 @@ watch(
       }
     }
   },
-  { immediate: true }
+  { immediate: false }
 )
 
 watch(
