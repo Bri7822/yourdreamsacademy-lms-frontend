@@ -3,8 +3,8 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 import { useGuestStore } from '@/stores/guest'
 
-
-const API_URL = 'https://yourdreamsacademy.pythonanywhere.com/api/auth/'
+const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/`
+// const API_URL = 'https://yourdreamsacademy.pythonanywhere.com/api/auth/'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({

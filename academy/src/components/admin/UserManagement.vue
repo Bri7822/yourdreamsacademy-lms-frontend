@@ -717,26 +717,20 @@ watch(selectedUsers, (newVal) => {
 
 const fetchUsers = async () => {
   try {
-    loading.value = true;
-    const response = await axios.get('/api/admin/users/');
-
-    // Ensure we're getting an array
-    if (Array.isArray(response.data)) {
-      users.value = response.data;
-    } else {
-      console.error('Unexpected response format:', response.data);
-      users.value = [];
-    }
-
-    totalUsers.value = users.value.length;
+    loading.value = true
+    const response = await axios.get('/api/admin/users/')
+    // Handle both paginated { results: [...] } and flat array responses
+    const data = response.data
+    users.value = Array.isArray(data) ? data : (data.results ?? [])
+    totalUsers.value = users.value.length
   } catch (error) {
-    console.error('Error fetching users:', error);
-    toast.error('Failed to load users');
-    users.value = [];
+    console.error('Error fetching users:', error)
+    toast.error('Failed to load users')
+    users.value = []
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const changePage = (page) => {
   if (page < 1 || page > totalPages.value) return

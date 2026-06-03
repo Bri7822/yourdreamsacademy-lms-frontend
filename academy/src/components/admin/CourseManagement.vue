@@ -743,8 +743,9 @@ const fetchCourses = async () => {
   try {
     loading.value = true
     const response = await axios.get('/api/admin/courses/')
-    // Ensure teacher data is properly structured even when null
-    courses.value = response.data.map((course) => ({
+    const data = response.data
+    const raw = Array.isArray(data) ? data : (data.results ?? [])
+    courses.value = raw.map((course) => ({
       ...course,
       teacher: course.teacher || null,
     }))
@@ -761,7 +762,8 @@ const fetchCourses = async () => {
 const fetchTeachers = async () => {
   try {
     const response = await axios.get('/api/admin/teachers/')
-    teachers.value = response.data
+    const raw = Array.isArray(response.data) ? response.data : (response.data.results ?? [])
+    teachers.value = raw.filter(t => t.id != null)
   } catch (error) {
     console.error('Error fetching teachers:', error)
     toast.error('Failed to load teachers')

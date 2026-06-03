@@ -108,23 +108,19 @@ const navItems = ref([
 ])
 
 const handleNavClick = (event) => {
-  // Remove any existing animation classes
-  event.currentTarget.classList.remove('clicking')
-
-  // Force reflow to restart animation
-  void event.currentTarget.offsetWidth
-
-  // Add animation class
-  event.currentTarget.classList.add('clicking')
-
-  // Remove after animation completes
+  const el = event.currentTarget  // capture before async/timeout
+  if (!el) return
+ 
+  el.classList.remove('clicking')
+  void el.offsetWidth
+  el.classList.add('clicking')
+ 
   setTimeout(() => {
-    event.currentTarget.classList.remove('clicking')
+    el.classList.remove('clicking')  // use captured ref, not event.currentTarget
   }, 200)
-
-  // Auto-collapse sidebar on mobile after click
+ 
   if (isMobile.value && !props.sidebarCollapsed) {
-    toggleSidebar();
+    toggleSidebar()
   }
 }
 </script>

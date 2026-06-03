@@ -510,6 +510,7 @@ import axios from 'axios'
 import { useAuthStore } from '../../stores/auth'
 import { useToast } from 'vue-toastification'
 import { debounce } from 'lodash'
+import Chart from 'chart.js/auto'
 
 const authStore = useAuthStore()
 const toast = useToast()
@@ -631,10 +632,13 @@ const filteredEnrollments = computed(() => {
       enrollment.course_title,
       enrollment.course_code
     ].some(field => field?.toLowerCase().includes(searchQuery.value.toLowerCase()))
-
+ 
     const matchesStatus = !filterStatus.value || enrollment.status === filterStatus.value
-    const matchesCourse = !filterCourse.value || enrollment.course_id.toString() === filterCourse.value
-
+ 
+    // Guard: course_id may be null
+    const matchesCourse = !filterCourse.value ||
+      (enrollment.course_id != null && String(enrollment.course_id) === String(filterCourse.value))
+ 
     return matchesSearch && matchesStatus && matchesCourse
   })
 })
@@ -1153,29 +1157,31 @@ const changePage = (page) => {
   })
 }
 
+
 const fetchEnrollments = async () => {
   try {
     loading.value = true
     const response = await axios.get(`${API_PREFIX}/enrollment-management/enrollments/`)
-
-    enrollments.value = response.data.map(enrollment => ({
+    const data = response.data
+    const raw = Array.isArray(data) ? data : (data.results ?? [])
+ 
+    enrollments.value = raw.map(enrollment => ({
       id: enrollment.id,
-      student_id: enrollment.student_id,
-      student_name: enrollment.student_name,
-      student_email: enrollment.student_email,
-      course_id: enrollment.course_id,
-      course_title: enrollment.course_title,
-      course_code: enrollment.course_code,
-      status: enrollment.status,
-      enrolled_at: enrollment.enrolled_at,
-      completed_at: enrollment.completed_at,
-      progress: enrollment.progress,
-      exercises_completed: enrollment.exercises_completed,
-      exercises_total: enrollment.exercises_total
+      student_id: enrollment.student ?? null,
+      student_name: enrollment.student_name ?? '',
+      student_email: enrollment.student_email ?? '',
+      course_id: enrollment.course ?? null,        // ← was crashing when null
+      course_title: enrollment.course_title ?? '',
+      course_code: enrollment.course_code ?? '',
+      status: enrollment.status ?? 'pending',
+      enrolled_at: enrollment.enrolled_at ?? null,
+      completed_at: enrollment.completed_at ?? null,
+      progress: enrollment.progress ?? 0,
+      exercises_completed: enrollment.exercises_completed ?? 0,
+      exercises_total: enrollment.exercises_total ?? 0,
     }))
-
+ 
     await updateRealtimeStats()
-
   } catch (error) {
     console.error('Error fetching enrollments:', error)
     toast.error('Failed to load enrollments')
@@ -1190,8 +1196,10 @@ const fetchCourses = async () => {
     const response = await axios.get(`${API_PREFIX}/courses/`, {
       params: { is_active: true }
     })
-    courses.value = response.data
-    availableCourses.value = response.data
+    const validCourses = (Array.isArray(response.data) ? response.data : response.data.results ?? [])
+      .filter(c => c.id != null)
+    courses.value = validCourses
+    availableCourses.value = validCourses
   } catch (error) {
     console.error('Error fetching courses:', error)
     toast.error('Failed to load courses')
