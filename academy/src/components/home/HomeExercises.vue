@@ -1,6 +1,5 @@
 <template>
   <div class="exercises-overview-page">
-    <!-- Header Section -->
     <section class="header-section">
       <div class="container">
         <h1 class="page-title">Course Exercises</h1>
@@ -8,7 +7,6 @@
       </div>
     </section>
 
-    <!-- Category Filters Section -->
     <section class="filters-section">
       <div class="container">
         <div class="category-filters">
@@ -25,29 +23,24 @@
       </div>
     </section>
 
-    <!-- Courses List Section -->
     <section class="courses-section">
       <div class="container">
-        <!-- Loading State -->
         <div v-if="loading" class="loading-state">
           <div class="loading-spinner"></div>
           <p>Loading courses and exercises...</p>
         </div>
 
-        <!-- Error State -->
         <div v-if="error" class="error-state">
           <div class="error-content">
             <i class="fas fa-exclamation-triangle"></i>
             <h3>Unable to Load Courses</h3>
             <p>{{ error }}</p>
             <button @click="loadCoursesWithExercises" class="retry-btn">
-              <i class="fas fa-redo"></i>
-              Try Again
+              <i class="fas fa-redo"></i> Try Again
             </button>
           </div>
         </div>
 
-        <!-- Courses List -->
         <div v-if="!loading && !error" class="courses-list">
           <div
             v-for="course in filteredCourses"
@@ -55,18 +48,15 @@
             class="course-row"
             @click="handleCourseClick(course)"
           >
-            <!-- Left: Course Icon & Info -->
             <div class="course-left">
               <div class="course-icon-wrapper">
                 <div class="course-icon">
                   <i :class="getCourseIcon(course.title)"></i>
                 </div>
               </div>
-
               <div class="course-details">
                 <h3 class="course-title">{{ course.title }}</h3>
                 <p class="course-description">{{ course.description }}</p>
-
                 <div class="course-meta-inline">
                   <span class="meta-item">
                     <i class="fas fa-dumbbell"></i>
@@ -92,7 +82,6 @@
               </div>
             </div>
 
-            <!-- Right: Progress & Action -->
             <div class="course-right">
               <div class="progress-section" v-if="authStore.isAuthenticated && isCourseEnrolled(course)">
                 <div class="progress-header">
@@ -100,13 +89,9 @@
                   <span class="progress-percent">{{ getExerciseProgress(course) }}%</span>
                 </div>
                 <div class="progress-bar-mini">
-                  <div
-                    class="progress-fill-mini"
-                    :style="{ width: getExerciseProgress(course) + '%' }"
-                  ></div>
+                  <div class="progress-fill-mini" :style="{ width: getExerciseProgress(course) + '%' }"></div>
                 </div>
               </div>
-
               <button
                 class="course-action-btn"
                 :class="getAccessType(course)"
@@ -121,7 +106,6 @@
               </button>
             </div>
 
-            <!-- Bottom: Exercise Preview Strip -->
             <div class="exercises-strip" v-if="getTotalExercises(course) > 0">
               <div class="strip-header">
                 <i class="fas fa-dumbbell"></i>
@@ -151,7 +135,6 @@
               </div>
             </div>
 
-            <!-- No Exercises State -->
             <div v-else class="exercises-strip">
               <div class="strip-header">
                 <i class="fas fa-dumbbell"></i>
@@ -165,11 +148,8 @@
           </div>
         </div>
 
-        <!-- Empty State -->
         <div v-if="!loading && !error && filteredCourses.length === 0" class="empty-state">
-          <div class="empty-illustration">
-            <i class="fas fa-dumbbell"></i>
-          </div>
+          <div class="empty-illustration"><i class="fas fa-dumbbell"></i></div>
           <h3>No courses found</h3>
           <p>Try selecting a different category or check back later.</p>
         </div>
@@ -193,20 +173,14 @@ const router = useRouter()
 const authStore = useAuthStore()
 const guestStore = useGuestStore()
 const toast = useToast()
-const {
-  handleExerciseNavigation,
-  isEnrolling,
-  currentEnrollingCourse
-} = useExerciseNavigation()
+const { handleExerciseNavigation, isEnrolling, currentEnrollingCourse } = useExerciseNavigation()
 
-// State
 const loading = ref(false)
 const error = ref(null)
 const activeCategory = ref('all')
 const courses = ref([])
-const lessonsData = ref({}) // Store lessons for each course
+const lessonsData = ref({})
 
-// Categories
 const categories = ref([
   { key: 'all', label: 'All Courses' },
   { key: 'finance', label: 'Finance' },
@@ -216,138 +190,48 @@ const categories = ref([
   { key: 'education', label: 'Department of Education' }
 ])
 
-// Computed
 const filteredCourses = computed(() => {
-  let filtered = courses.value
-
-  if (activeCategory.value !== 'all') {
-    filtered = filtered.filter(course => {
-      const category = course.category ? course.category.toLowerCase().replace(/ /g, '_') : ''
-
-      switch (activeCategory.value) {
-        case 'finance':
-          return category === 'finance'
-        case 'personal_development':
-          return category === 'personal_development'
-        case 'business':
-          return category === 'business'
-        case 'marketing':
-          return category === 'marketing'
-        case 'education':
-          return category === 'department_of_education'
-        default:
-          return true
-      }
-    })
-  }
-
-  return filtered
+  if (activeCategory.value === 'all') return courses.value
+  return courses.value.filter(course => {
+    const cat = (course.category || '').toLowerCase().replace(/ /g, '_')
+    const map = {
+      finance: 'finance',
+      personal_development: 'personal_development',
+      business: 'business',
+      marketing: 'marketing',
+      education: 'department_of_education',
+    }
+    return cat === (map[activeCategory.value] || activeCategory.value)
+  })
 })
 
-
-const handleSpecificExerciseClick = async (course, lesson) => {
-  console.log('🎯 Specific exercise clicked:', {
-    course: course.title,
-    lesson: lesson.title,
-    lessonSlug: generateSlug(lesson.title),
-    enrolled: isCourseEnrolled(course)
-  })
-
-  // FIXED: Show message instead of redirecting for non-enrolled students
-  if (authStore.isAuthenticated && !isCourseEnrolled(course)) {
-    console.log('🔒 Student not enrolled, showing enrollment message')
-    toast.info(`Please enroll in "${course.title}" to access the exercises`, {
-      timeout: 4000,
-      closeOnClick: true,
-      pauseOnFocusLoss: true,
-      pauseOnHover: true,
-      draggable: true,
-      draggablePercent: 0.6,
-      showCloseButtonOnHover: false,
-      hideProgressBar: false,
-      closeButton: "button",
-      icon: true,
-      rtl: false
-    })
-    return
-  }
-
-  try {
-    // Generate slug for navigation
-    const lessonSlug = generateSlug(lesson.title)
-    await handleExerciseNavigation(course, lessonSlug)
-  } catch (err) {
-    console.error('❌ Error handling specific exercise click:', err)
-    toast.error('Failed to access exercise. Please try again.')
-  }
-}
-
-const getCourseIcon = (courseTitle) => {
-  const icons = {
-    'Financial Literacy': 'fas fa-chart-line',
-    'Discipline, Habits & Focus': 'fas fa-brain',
-    'Entrepreneurship Fundamentals': 'fas fa-rocket'
-  }
-
-  if (icons[courseTitle]) return icons[courseTitle]
-
-  const lowerTitle = courseTitle.toLowerCase()
-  if (lowerTitle.includes('finance') || lowerTitle.includes('money')) return 'fas fa-chart-line'
-  if (lowerTitle.includes('development') || lowerTitle.includes('habit')) return 'fas fa-brain'
-  if (lowerTitle.includes('business') || lowerTitle.includes('entrepreneur')) return 'fas fa-briefcase'
-  if (lowerTitle.includes('marketing')) return 'fas fa-bullhorn'
-  if (lowerTitle.includes('education')) return 'fas fa-graduation-cap'
-
-  return 'fas fa-dumbbell'
-}
+// ── helpers ──────────────────────────────────────────────────────────────────
 
 const getLessonsWithExercises = (course) => {
   const lessons = lessonsData.value[course.id] || []
-  // Each lesson with exercise data counts as ONE exercise
-  return lessons.filter(lesson => lesson.exercise_count > 0)
+  return lessons.filter(l => (l.exercise_count || 0) > 0)
 }
 
-const getTotalExercises = (course) => {
-  const lessons = lessonsData.value[course.id] || []
-  // FIXED: Count lessons with exercises, not individual questions
-  // Each lesson with exercise data = 1 exercise
-  const lessonsWithExercises = lessons.filter(lesson => lesson.exercise_count > 0)
-  console.log(`📊 Course ${course.title}: ${lessonsWithExercises.length} exercises (lessons with exercises)`)
-  return lessonsWithExercises.length
-}
+const getTotalExercises = (course) =>
+  getLessonsWithExercises(course).length
 
-const getLessonQuestionCount = (lesson) => {
-  // FIXED: Always show 3 questions per lesson with exercises
-  const hasExercises = lesson.exercise_count > 0
-  const questionCount = hasExercises ? 3 : 0
-  console.log(`📝 Lesson ${lesson.title}: Has exercises: ${hasExercises}, Showing: ${questionCount} questions`)
-  return questionCount
-}
+const getLessonQuestionCount = (lesson) =>
+  // exercise_count is 1 per lesson that has exercises; show 3 as a UI hint
+  (lesson.exercise_count || 0) > 0 ? 3 : 0
 
 const getLessonDotClass = (lesson, course) => {
-  if (!authStore.isAuthenticated) return 'upcoming'
-  if (!isCourseEnrolled(course)) return 'upcoming'
-
-  // FIXED: Ensure completed lessons show green dots
-  console.log(`🔵 Lesson ${lesson.title}: completed=${lesson.completed}`)
+  if (!authStore.isAuthenticated || !isCourseEnrolled(course)) return 'upcoming'
   return lesson.completed ? 'completed' : 'upcoming'
 }
 
-const getCourseExercisesPreview = (course) => {
-  const lessonsWithExercises = getLessonsWithExercises(course)
-  return lessonsWithExercises.slice(0, 3)
-}
+const getCourseExercisesPreview = (course) =>
+  getLessonsWithExercises(course).slice(0, 3)
 
-const getExerciseProgress = (course) => {
-  if (!authStore.isAuthenticated || !isCourseEnrolled(course)) return 0
-  return course.progress || 0
-}
+const getExerciseProgress = (course) =>
+  (authStore.isAuthenticated && isCourseEnrolled(course)) ? (course.progress || 0) : 0
 
-const isCourseEnrolled = (course) => {
-  return course.enrollment_status === 'enrolled' ||
-         course.enrollment_status === 'approved' ||
-         course.enrollment_status === 'completed'
-}
+const isCourseEnrolled = (course) =>
+  ['enrolled', 'approved', 'completed'].includes(course.enrollment_status)
 
 const getAccessType = (course) => {
   if (!authStore.isAuthenticated) return 'guest'
@@ -355,79 +239,89 @@ const getAccessType = (course) => {
 }
 
 const getExerciseButtonText = (course) => {
-  const accessType = getAccessType(course)
-  switch (accessType) {
-    case 'enrolled':
-      return 'Continue Exercises'
-    case 'not-enrolled':
-      return 'Enroll & Practice'
-    case 'guest':
-      return 'Try Exercises'
-    default:
-      return 'Try Exercises'
-  }
+  const t = getAccessType(course)
+  if (t === 'enrolled') return 'Continue Exercises'
+  if (t === 'not-enrolled') return 'Enroll & Practice'
+  return 'Try Exercises'
 }
 
-const handleCourseClick = (course) => {
-  // Optional: Add any course-level click behavior here
-  console.log('Course clicked:', course.title)
+const getCourseIcon = (title) => {
+  const t = (title || '').toLowerCase()
+  if (t.includes('finance') || t.includes('money')) return 'fas fa-chart-line'
+  if (t.includes('habit') || t.includes('discipline') || t.includes('development')) return 'fas fa-brain'
+  if (t.includes('entrepreneur') || t.includes('business')) return 'fas fa-briefcase'
+  if (t.includes('marketing')) return 'fas fa-bullhorn'
+  if (t.includes('education')) return 'fas fa-graduation-cap'
+  return 'fas fa-dumbbell'
 }
+
+// ── actions ───────────────────────────────────────────────────────────────────
+
+const handleCourseClick = (course) => {}
 
 const handleExerciseAction = async (course) => {
-  console.log('🎯 Main exercise action clicked for:', course.title)
-
   try {
-    // Don't pass specific lesson for the main button - let it use default (first lesson)
-    await handleExerciseNavigation(course) // No specific lesson
+    await handleExerciseNavigation(course)
   } catch (err) {
-    console.error('❌ Error handling exercise action:', err)
     toast.error('Failed to access exercises. Please try again.')
   }
 }
 
-const fetchCourses = async () => {
+const handleSpecificExerciseClick = async (course, lesson) => {
+  if (authStore.isAuthenticated && !isCourseEnrolled(course)) {
+    toast.info(`Please enroll in "${course.title}" to access the exercises`, { timeout: 4000 })
+    return
+  }
   try {
-    console.log('📚 Fetching courses for home exercises...')
-    let response
-
-    // ✅ Use home endpoint for all courses
-    response = await axios.get('/api/student/home/courses/')
-
-    console.log('✅ Home courses API response:', response.data)
-    let coursesArray = []
-    if (response.data && Array.isArray(response.data.courses)) {
-      coursesArray = response.data.courses
-    } else if (response.data && Array.isArray(response.data)) {
-      coursesArray = response.data
-    }
-    return coursesArray
-
+    await handleExerciseNavigation(course, generateSlug(lesson.title))
   } catch (err) {
-    console.error('❌ Failed to fetch home courses:', err)
-    throw err
+    toast.error('Failed to access exercise. Please try again.')
+  }
+}
+
+// ── data fetching ─────────────────────────────────────────────────────────────
+
+const fetchCourses = async () => {
+  // Use authenticated courses endpoint when logged in (returns enrollment_status + progress)
+  // Fall back to home endpoint for guests
+  if (authStore.isAuthenticated) {
+    const res = await axios.get('/api/student/courses/')
+    const data = res.data
+    return Array.isArray(data.courses) ? data.courses
+         : Array.isArray(data) ? data
+         : []
+  } else {
+    const res = await axios.get('/api/student/home/courses/')
+    const data = res.data
+    return Array.isArray(data.courses) ? data.courses
+         : Array.isArray(data) ? data
+         : []
   }
 }
 
 const fetchLessonsForCourse = async (course) => {
   try {
-    console.log(`📖 Fetching lessons for home course: ${course.code}`)
+    // Use authenticated lesson endpoint when enrolled (returns exercise_count + completed)
+    // Fall back to home endpoint for guests or non-enrolled students
     let response
-
-    // ✅ Use home endpoint for lessons
-    response = await axios.get(`/api/student/home/courses/${course.code}/lessons/`)
-
-    console.log(`✅ Home lessons for ${course.code}:`, response.data)
-    let lessons = []
-    if (Array.isArray(response.data.lessons)) {
-      lessons = response.data.lessons
-    } else if (response.data && Array.isArray(response.data)) {
-      lessons = response.data
+    if (authStore.isAuthenticated && isCourseEnrolled(course)) {
+      try {
+        response = await axios.get(`/api/student/courses/${course.code}/lessons/`)
+      } catch (e) {
+        // Not enrolled or error – fall back to home endpoint
+        response = await axios.get(`/api/student/home/courses/${course.code}/lessons/`)
+      }
+    } else {
+      response = await axios.get(`/api/student/home/courses/${course.code}/lessons/`)
     }
 
-    return lessons
-
+    const data = response.data
+    // Handle both {lessons:[...]} and plain [...] shapes
+    if (Array.isArray(data.lessons)) return data.lessons
+    if (Array.isArray(data)) return data
+    return []
   } catch (err) {
-    console.error(`❌ Failed to fetch home lessons for ${course.code}:`, err)
+    console.error(`Failed to fetch lessons for ${course.code}:`, err)
     return []
   }
 }
@@ -437,16 +331,11 @@ const loadCoursesWithExercises = async () => {
   error.value = null
 
   try {
+    // Ensure guest session exists for unauthenticated users
     if (!authStore.isAuthenticated) {
       if (!guestStore.isGuestMode || !guestStore.session?.session_id) {
-        console.log('🔐 Starting new guest session...')
         const result = await guestStore.startGuestSession()
-        if (!result.success) {
-          throw new Error('Failed to start guest session')
-        }
-        console.log('✅ Guest session started:', guestStore.session.session_id)
-      } else {
-        console.log('✅ Using existing guest session:', guestStore.session.session_id)
+        if (!result.success) throw new Error('Failed to start guest session')
       }
     }
 
@@ -456,94 +345,26 @@ const loadCoursesWithExercises = async () => {
       enrollment_status: course.enrollment_status || 'not_enrolled',
       category: course.category || 'General',
       progress: course.progress || 0,
-      code: course.code || `CRS${course.id}`
+      code: course.code || `CRS${course.id}`,
     }))
 
-    console.log(`✅ Loaded ${courses.value.length} courses`)
-
-    // Fetch lessons for ALL courses for ALL users
-    const lessonPromises = courses.value.map(async (course) => {
-      try {
-        const lessons = await fetchLessonsForCourse(course)
-        lessonsData.value[course.id] = lessons
-
-        // Count lessons with exercises for ALL users
-        const lessonsWithExercises = lessons.filter(lesson => lesson.exercise_count > 0)
-        const totalExercises = lessonsWithExercises.length
-
-        console.log(`✅ Course ${course.code}: ${lessons.length} lessons, ${totalExercises} exercises`)
-        console.log(`   Enrollment status: ${course.enrollment_status}, User: ${authStore.isAuthenticated ? 'Registered' : 'Guest'}`)
-
-        return {
-          courseId: course.id,
-          lessons,
-          totalExercises,
-          success: true
-        }
-      } catch (error) {
-        console.error(`⚠️ Failed to load lessons for ${course.code}:`, error)
-        lessonsData.value[course.id] = []
-        return {
-          courseId: course.id,
-          lessons: [],
-          totalExercises: 0,
-          success: false,
-          error
-        }
-      }
-    })
-
-    const results = await Promise.all(lessonPromises)
-    const grandTotal = results.reduce((sum, result) => sum + (result.totalExercises || 0), 0)
-    console.log(`✅ Grand total: ${grandTotal} exercises across all courses`)
-    console.log(`👥 User type: ${authStore.isAuthenticated ? 'Registered Student' : 'Guest'}`)
-    console.log(`📋 All users can now see ALL exercises!`)
+    // Fetch lessons for all courses in parallel
+    await Promise.all(courses.value.map(async (course) => {
+      const lessons = await fetchLessonsForCourse(course)
+      lessonsData.value[course.id] = lessons
+    }))
 
   } catch (err) {
-    console.error('❌ Failed to load courses with exercises:', err)
-    error.value = err.response?.data?.detail || err.message || 'Failed to load courses. Please try again.'
+    error.value = err.response?.data?.detail || err.message || 'Failed to load courses.'
   } finally {
     loading.value = false
   }
 }
 
-const navigateToGuestLesson = (courseSlug, lesson) => {
-  // Generate slug from lesson title
-  const generateSlug = (title) => {
-    return title
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/--+/g, '-')
-      .trim()
-  }
+onMounted(() => loadCoursesWithExercises())
 
-  const lessonSlug = generateSlug(lesson.title)
-
-  // Set the navigation source before navigating
-  const routeName = router.currentRoute.value.name
-  GuestNavigation.setSource(routeName)
-
-  router.push({
-    name: 'guest-lesson-detail',
-    params: {
-      courseSlug,
-      lessonSlug  // ✅ Use lesson slug instead of ID
-    }
-  })
-}
-
-// Lifecycle
-onMounted(() => {
-  console.log('💪 ExercisesOverview mounted')
-  loadCoursesWithExercises()
-})
-
-onUnmounted(() => {
-  console.log('👋 ExercisesOverview unmounted')
-})
+onUnmounted(() => {})
 </script>
-
 <style scoped>
 /* Your existing CSS with additions */
 

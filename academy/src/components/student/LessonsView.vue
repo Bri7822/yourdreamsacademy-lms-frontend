@@ -189,54 +189,61 @@ const fetchCourses = async () => {
   }
 };
 
-// Make sure the startLearning method uses generateSlug:
 const startLearning = async (course) => {
   const lessonStore = useLessonStore()
 
-  console.log('\n' + '='.repeat(80))
-  console.log('🚀 LESSONS VIEW: Starting enrolled course')
-  console.log('Course:', course.title)
-  console.log('Code:', course.code)
-  console.log('Progress:', course.progress + '%')
-  console.log('='.repeat(80) + '\n')
+  console.log('🚀 startLearning:', course.title, course.code)
 
+  // Clear old state for this course
   lessonStore.clearCourseData(course.code)
   lessonStore.resetCurrentCourse()
-
   sessionStorage.removeItem('activeCourseSlug')
   sessionStorage.setItem('lessonNavigationSource', 'student-lessons-view')
 
-  // ✅ Load lessons first
-  await lessonStore.loadLessons(course.code)
+  // Load lessons — await the result
+  const result = await lessonStore.loadLessons(course.code)
 
-  if (lessonStore.lessons.length === 0) {
-    console.error('❌ No lessons available for this course')
+  if (!result.success) {
+    error.value = `Failed to load lessons for "${course.title}": ${result.error}`
+    console.error('❌ loadLessons failed:', result.error)
     return
   }
 
-  const firstLesson = lessonStore.lessons[0]
+  const lessons = result.data || []
+
+  if (lessons.length === 0) {
+    error.value = `No lessons available for "${course.title}" yet.`
+    console.warn('⚠️ No lessons found for course:', course.code)
+    return
+  }
+
+  const firstLesson = lessons[0]
+
+  if (!firstLesson?.title) {
+    error.value = 'First lesson has no title — cannot navigate.'
+    console.error('❌ First lesson missing title:', firstLesson)
+    return
+  }
+
   const firstLessonSlug = generateSlug(firstLesson.title)
 
-  console.log('🎯 Navigating to lesson:', {
+  console.log('🎯 Navigating to first lesson:', {
     courseSlug: course.code,
     lessonSlug: firstLessonSlug,
     lessonId: firstLesson.id,
-    lessonTitle: firstLesson.title
   })
 
-  // ✅ CORRECT: Use lessonSlug
   router.push({
     name: 'student-lesson-detail',
     params: {
       courseSlug: course.code,
-      lessonSlug: firstLessonSlug
+      lessonSlug: firstLessonSlug,
     },
     query: {
       courseId: course.id,
       courseTitle: course.title,
       source: 'lessons-view',
       progress: course.progress,
-      t: Date.now()
     }
   })
 }

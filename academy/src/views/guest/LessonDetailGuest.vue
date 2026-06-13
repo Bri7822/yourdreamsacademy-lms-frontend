@@ -177,9 +177,10 @@
                   placeholder="Type your answer here..."
                   class="blank-input"
                   :class="{
-                    correct: showResults[question.id] && isFillBlankCorrect(question),
-                    incorrect: showResults[question.id] && !isFillBlankCorrect(question),
-                  }"
+                   correct: showResults[question.id] && isFillBlankCorrect(question),
+                   incorrect: showResults[question.id] && !isFillBlankCorrect(question),
+                 }"
+                 @input="onFillBlankInput(question.id)"
                 />
               </div>
 
@@ -221,13 +222,22 @@
               <!-- Action Buttons -->
               <div class="exercise-actions">
                 <button
-                  v-if="!showResults[question.id]"
+                  v-if="question.type !== 'paragraph' && (!showResults[question.id] || (showResults[question.id] && !isAnswerCorrect(question)))"
                   @click="checkAnswer(question)"
                   :disabled="!hasValidAnswer(question)"
                   class="check-btn guest-btn"
                 >
                   <i class="fas fa-check-circle"></i>
-                  Check Answer
+                  {{ showResults[question.id] && !isAnswerCorrect(question) ? 'Try Again' : 'Check Answer' }}
+                </button>
+                <button
+                  v-if="question.type === 'paragraph' && !showResults[question.id]"
+                  @click="checkAnswer(question)"
+                  :disabled="!hasValidAnswer(question)"
+                  class="check-btn guest-btn"
+                >
+                  <i class="fas fa-check-circle"></i>
+                  Save Reflection
                 </button>
               </div>
 
@@ -262,7 +272,7 @@
                   }}</span>
                 </div>
 
-                <p v-if="question.explanation" class="explanation">
+                <p class="explanation" v-if="question.explanation">
                   {{ question.explanation }}
                 </p>
 
@@ -459,6 +469,15 @@ export default {
       return null
     }
 
+    const onFillBlankInput = (questionId) => {
+      // When user types a new answer after seeing wrong result, clear the result
+      // so they can re-attempt cleanly
+      if (showResults.value[questionId] && !exerciseResults.value[questionId]?.isCorrect) {
+        showResults.value[questionId] = false
+        exerciseResults.value[questionId] = null
+      }
+    }
+
     const initializeSelectedLesson = () => {
       const routeLessonSlug = route.params.lessonSlug
       const propLessonSlug = props.lessonSlug
@@ -514,8 +533,21 @@ export default {
     })
 
     const canCompleteLesson = computed(() => {
-      if (!hasExercises.value) return true
-      return completedExercisesCount.value === lessonData.value.exercises?.length
+      if (!lessonData.value?.exercises || lessonData.value.exercises.length === 0) {
+        return true // No exercises — always completable
+      }
+
+      const exercises = lessonData.value.exercises || []
+
+      // ALL exercises must have a CORRECT answer (not just shown)
+      return exercises.every(q => {
+        if (q.type === 'paragraph') {
+          // Paragraph is always "correct" once submitted
+          return showResults.value[q.id] === true
+        }
+        // For other types, must have shown result AND be correct
+        return showResults.value[q.id] === true && isAnswerCorrect(q)
+      })
     })
 
     const showGuestNotice = computed(() => {
@@ -698,11 +730,17 @@ export default {
       showResults.value[question.id] = true
 
       if (isCorrect) {
-        toast.success('Correct answer! 🎉')
+        toast.success(question.type === 'paragraph' ? 'Reflection saved! 📝' : 'Correct answer! 🎉')
       } else {
+        // Wrong answer — show result badge but keep input editable for retry
+        // Do NOT prevent re-attempt; the button will reappear via v-if
         toast.error('Incorrect answer. Try again!')
+        // Reset showResults after 1.5s so user can retry (they see the result briefly)
+        // Actually keep showResults=true to show the "incorrect" badge,
+        // but the button reappears via v-if="!showResults || !isAnswerCorrect"
       }
 
+      // Only auto-complete if ALL exercises are correctly answered
       if (canCompleteLesson.value && !lessonCompleted.value && !autoCompletionTriggered.value) {
         autoCompletionTriggered.value = true
         setTimeout(() => {
@@ -939,6 +977,7 @@ export default {
       handleVideoCompleted,
       getQuestionTypeName,
       getWordCount,
+      onFillBlankInput
     }
   },
 }

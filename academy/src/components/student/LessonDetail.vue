@@ -203,9 +203,7 @@
                   <i :class="question.type === 'paragraph' ? 'fas fa-check-circle' : (lessonStore.exerciseResults[question.id]?.isCorrect ? 'fas fa-check-circle' : 'fas fa-times-circle')"></i>
                   <span>{{ question.type === 'paragraph' ? 'Saved!' : (lessonStore.exerciseResults[question.id]?.isCorrect ? 'Correct!' : 'Incorrect') }}</span>
                 </div>
-                <p class="explanation" v-if="question.explanation">
-                  {{ question.explanation }}
-                </p>
+
                 <p v-if="!lessonStore.exerciseResults[question.id]?.isCorrect && lessonStore.exerciseResults[question.id]?.correctAnswer !== undefined" class="correct-answer">
                   Correct answer: {{
                     question.type === 'multiple-choice'
@@ -296,6 +294,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { useLessonStore } from '@/stores/lesson'
 import VideoPlayer from './VideoPlayer.vue'
+import axios from 'axios'
 
 export default {
   name: 'LessonDetail',
@@ -530,32 +529,75 @@ export default {
           toast.success('Lesson completed!')
 
           if (canNavigateNext.value) {
-            setTimeout(() => {
-              nextLesson()
-            }, 2000)
+            setTimeout(() => { nextLesson() }, 2000)
           }
+        } else {
+          // ✅ Not ready yet (e.g. video coverage/engagement still catching up) —
+          // don't permanently lock; let a later trigger retry.
+          autoCompletionAttempted.value = false
         }
       } catch (error) {
         console.error('Auto-completion error:', error)
+        autoCompletionAttempted.value = false
       } finally {
         isAutoCompleting.value = false
       }
     }
 
-    const handleVideoProgress = (progressData) => {
-      console.log('Video progress:', progressData)
+    let lastVideoPersist = 0
+
+    const persistVideoProgress = async (progressData, force = false) => {
+      const lessonId = lessonStore.currentLesson?.id
+      if (!lessonId) return
+
+      // Throttle periodic updates to once every 5s; completion events bypass this
+      const now = Date.now()
+      if (!force && now - lastVideoPersist < 5000) return
+      lastVideoPersist = now
+
+      try {
+        const response = await axios.post(`/api/student/lessons/${lessonId}/video-progress/`, {
+          video_progress: progressData.currentTime || 0,
+          video_duration: progressData.duration || 0,
+          watched_percentage: Math.min(progressData.progress || 0, 100),
+          engagement_score: 10
+        })
+
+        if (response.data?.video_completed && !lessonStore.currentLesson?.video_completed) {
+          lessonStore.setVideoCompleted(lessonId)
+          if (lessonStore.currentLesson) {
+            lessonStore.currentLesson.video_completed = true
+          }
+          if (!lessonStore.currentLesson?.completed) {
+            autoCheckCompletion()
+          }
+        }
+      } catch (err) {
+        console.error('Failed to persist video progress:', err)
+      }
     }
 
-    const handleVideoCompleted = () => {
+    const handleVideoProgress = (progressData) => {
+      console.log('Video progress:', progressData)
+      persistVideoProgress(progressData)
+    }
+
+    const handleVideoCompleted = async (data) => {
       toast.success('Video completed!')
+
+      await persistVideoProgress({
+        currentTime: data?.duration || 0,
+        duration: data?.duration || 0,
+        progress: 100
+      }, true)
+
       lessonStore.setVideoCompleted(lessonStore.currentLesson?.id)
-      // ✅ Add this - mark video as completed in the store
       if (lessonStore.currentLesson) {
         lessonStore.currentLesson.video_completed = true
       }
 
       if (!lessonStore.currentLesson?.completed) {
-        setTimeout(() => autoCheckCompletion(), 500)
+        autoCheckCompletion()
       }
     }
 

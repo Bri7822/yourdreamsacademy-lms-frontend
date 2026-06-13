@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-const API_BASE = 'https://yourdreamsacademy.pythonanywhere.com/api'
+const API_BASE = '/api'
 
 export const useLessonStore = defineStore('lesson', {
   state: () => ({
@@ -80,6 +80,11 @@ export const useLessonStore = defineStore('lesson', {
     canCompleteLesson: (state) => {
       if (state.currentLesson?.completed) return false
 
+      // ✅ Must finish the video first if this lesson has one
+      if (state.currentLesson?.video_url && !state.currentLesson?.video_completed) {
+        return false
+      }
+
       const hasQuestions = state.currentLesson?.exercises && state.currentLesson.exercises.length > 0
       if (hasQuestions) {
         const exercises = state.currentLesson.exercises
@@ -101,7 +106,7 @@ export const useLessonStore = defineStore('lesson', {
       }
       return true
     }
-  },
+  },  
 
   actions: {
     setCurrentCourse(courseCode) {
@@ -147,67 +152,93 @@ export const useLessonStore = defineStore('lesson', {
     },
 
     async loadLessons(courseSlug) {
-      const course = this.courses.get(courseSlug)
-      if (course?.areLessonsLoaded) {
+      const existing = this.courses.get(courseSlug)
+      if (existing?.areLessonsLoaded && existing.lessons.length > 0) {
         this.setCurrentCourse(courseSlug)
-        return { success: true, data: course.lessons, cached: true }
+        return { success: true, data: existing.lessons, cached: true }
       }
 
       this.loading = true
       this.error = null
 
       try {
-        const response = await axios.get(`${API_BASE}/student/courses/${courseSlug}/lessons/`)
-
-        if (response.data.lessons && response.data.lessons.length > 0) {
-          const lessons = response.data.lessons.map(lesson => ({
-            ...lesson,
-            completed: lesson.completed === true
-          }))
-
-          if (!this.courses.has(courseSlug)) {
-            this.courses.set(courseSlug, {
-              courseData: null,
-              lessons: lessons,
-              isCourseLoaded: false,
-              areLessonsLoaded: true,
-              lastUpdated: new Date().toISOString()
-            })
+        // Try authenticated endpoint first
+        let response
+        try {
+          response = await axios.get(`${API_BASE}/student/courses/${courseSlug}/lessons/`)
+        } catch (authErr) {
+          if (authErr.response?.status === 401 || authErr.response?.status === 403) {
+            // Fall back to public home endpoint (no auth required)
+            response = await axios.get(`${API_BASE}/student/home/courses/${courseSlug}/lessons/`)
           } else {
-            const course = this.courses.get(courseSlug)
-            course.lessons = lessons
-            course.areLessonsLoaded = true
-            course.lastUpdated = new Date().toISOString()
+            throw authErr
           }
-
-          this.setCurrentCourse(courseSlug)
-
-          console.log('✅ LESSONS LOADED FOR COURSE:', {
-            course: courseSlug,
-            total: lessons.length,
-            completed: lessons.filter(l => l.completed).length
-          })
-
-          return { success: true, data: lessons }
-        } else {
-          this.error = 'No lessons available for this course'
-          return { success: false, error: this.error }
         }
+
+        const data = response.data
+
+        // Handle both response shapes:
+        //   New shape: { lessons: [...], course_code: '...', total_lessons: N }
+        //   Old shape: [...]
+        //   Paginated: { results: [...] }
+        let rawLessons = []
+        if (Array.isArray(data)) {
+          rawLessons = data
+        } else if (data && Array.isArray(data.lessons)) {
+          rawLessons = data.lessons
+        } else if (data && Array.isArray(data.results)) {
+          rawLessons = data.results
+        }
+
+        const lessons = rawLessons.map(lesson => ({
+          ...lesson,
+          completed: lesson.completed === true
+        }))
+
+        if (!this.courses.has(courseSlug)) {
+          this.courses.set(courseSlug, {
+            courseData: null,
+            lessons,
+            isCourseLoaded: false,
+            areLessonsLoaded: true,
+            lastUpdated: new Date().toISOString()
+          })
+        } else {
+          const course = this.courses.get(courseSlug)
+          course.lessons = lessons
+          course.areLessonsLoaded = true
+          course.lastUpdated = new Date().toISOString()
+        }
+
+        this.setCurrentCourse(courseSlug)
+
+        console.log('✅ LESSONS LOADED:', {
+          course: courseSlug,
+          total: lessons.length,
+          completed: lessons.filter(l => l.completed).length
+        })
+
+        // Return success even if 0 lessons — let the caller decide what to show
+        return { success: true, data: lessons }
+
       } catch (error) {
         this.error = error.response?.data?.detail || 'Failed to load lessons'
+        console.error('❌ loadLessons error:', error)
         return { success: false, error: this.error }
       } finally {
         this.loading = false
       }
     },
 
-    async markLessonCompleted(reflection = '', score = 0, totalQuestions = 0) {
+async markLessonCompleted(reflection = '', score = 0, totalQuestions = 0) {
       if (!this.currentLesson) {
         return { success: false, error: 'No lesson selected' }
       }
 
       const lessonId = this.currentLesson.id
-      const courseCode = this.courseData?.code
+      // ✅ courseData is often null in the student flow (only loadLessons() runs,
+      // not loadCourse()) — fall back to currentCourseCode
+      const courseCode = this.courseData?.code || this.currentCourseCode
 
       console.log('🎯 ATTEMPTING TO COMPLETE LESSON:', { lessonId, courseCode })
 
@@ -219,15 +250,29 @@ export const useLessonStore = defineStore('lesson', {
 
         const serverData = response.data
 
-        // ✅ CRITICAL FIX: Update lessons in the store
         if (serverData.updated_lessons && Array.isArray(serverData.updated_lessons)) {
-          const course = this.courses.get(courseCode)
+          const updatedLessons = serverData.updated_lessons.map(lesson => ({
+            ...lesson,
+            completed: lesson.completed === true
+          }))
+
+          // ✅ Self-heal: create the course map entry if it doesn't exist yet,
+          // instead of silently skipping and crashing later on course.lessons
+          let course = this.courses.get(courseCode)
           if (course) {
-            course.lessons = serverData.updated_lessons.map(lesson => ({
-              ...lesson,
-              completed: lesson.completed === true
-            }))
+            course.lessons = updatedLessons
             course.lastUpdated = new Date().toISOString()
+          } else {
+            course = {
+              courseData: this.courseData,
+              lessons: updatedLessons,
+              isCourseLoaded: !!this.courseData,
+              areLessonsLoaded: true,
+              lastUpdated: new Date().toISOString()
+            }
+            if (courseCode) {
+              this.courses.set(courseCode, course)
+            }
           }
 
           // Update current lesson
@@ -252,13 +297,11 @@ export const useLessonStore = defineStore('lesson', {
             total
           })
 
-          // Emit via GlobalProgressEvents
           if (window.globalProgressEvents) {
             window.globalProgressEvents.emitLessonCompleted(lessonId, courseCode)
             window.globalProgressEvents.emitProgressUpdated(courseCode, progress, completed, total)
           }
 
-          // Also update GlobalProgressState
           if (window.globalProgressState) {
             window.globalProgressState.updateProgress(courseCode, {
               progress,
@@ -267,7 +310,6 @@ export const useLessonStore = defineStore('lesson', {
             })
           }
 
-          // Update ProgressStore
           if (window.progressStore) {
             window.progressStore.updateProgress(courseCode, {
               progress,
@@ -347,76 +389,78 @@ export const useLessonStore = defineStore('lesson', {
     },
 
     // stores/lesson.js - FIXED loadLessonDetail function
-    async loadLessonDetail(lessonId) {
-      try {
-        console.log(`📖 Loading lesson ${lessonId} details...`)
-
-        // ✅ Get courseSlug from currentCourseCode
-        const courseSlug = this.currentCourseCode
-
-        if (!courseSlug) {
-          console.error('❌ No course slug available for loading lesson')
-          return { success: false, error: 'Course not loaded' }
-        }
-
-        // ✅ Use the slug-based endpoint
-        const response = await axios.get(
-          `${API_BASE}/student/courses/${courseSlug}/lessons/${lessonId}/`
-        )
-
-        const lessonDetail = response.data
-
-        const completeLesson = {
-          id: lessonDetail.id,
-          title: lessonDetail.title,
-          description: lessonDetail.description,
-          content: lessonDetail.content,
-          video_url: lessonDetail.video_url,
-          exercises: lessonDetail.exercises || [],
-          completed: lessonDetail.completed === true,
-          completed_at: lessonDetail.completed_at,
-          duration: lessonDetail.duration,
-          order: lessonDetail.order,
-          course_title: lessonDetail.course_title,
-          course_code: lessonDetail.course_code
-        }
-
-        // Update lessons array for current course
-        if (this.currentCourseCode) {
-          const course = this.courses.get(this.currentCourseCode)
-          if (course) {
-            course.lessons = course.lessons.map(lesson => {
-              if (lesson.id === lessonId) {
-                return { ...lesson, ...completeLesson }
-              }
-              return lesson
-            })
-          }
-        }
-
-        this.currentLesson = completeLesson
-        this.exerciseAnswers = {}
-        this.exerciseResults = {}
-        this.showResults = {}
-        this.submittingAnswers = {}
-
-        if (completeLesson.exercises && completeLesson.exercises.length > 0) {
-          completeLesson.exercises.forEach(question => {
-            this.exerciseAnswers[question.id] =
-              question.type === 'multiple-choice' || question.type === 'true-false' ? null : ''
-            this.submittingAnswers[question.id] = false
-          })
-        }
-
-        return { success: true, data: lessonDetail }
-      } catch (error) {
-        console.error('Failed to load lesson detail:', error)
-        return {
-          success: false,
-          error: error.response?.data?.detail || 'Failed to load lesson',
-          fullError: error
-        }
-      }
+   async loadLessonDetail(lessonId) {
+         console.log(`📖 Loading lesson ${lessonId} detail...`)
+   
+         try {
+           // Use the ID-based endpoint: /api/student/lessons/<lessonId>/
+           // This is student_lesson_detail FBV which requires IsAuthenticated
+           // and returns LessonDetailSerializer (includes exercises, video_url, etc.)
+           const response = await axios.get(`${API_BASE}/student/lessons/${lessonId}/`)
+           const lessonDetail = response.data
+   
+           const completeLesson = {
+             id: lessonDetail.id,
+             title: lessonDetail.title,
+             description: lessonDetail.description,
+             content: lessonDetail.content,
+             video_url: lessonDetail.video_url,
+             exercises: lessonDetail.exercises || [],
+             completed: lessonDetail.completed === true,
+             completed_at: lessonDetail.completed_at,
+             score: lessonDetail.score,
+             duration: lessonDetail.duration,
+             order: lessonDetail.order,
+             course_title: lessonDetail.course_title,
+             course_code: lessonDetail.course_code,
+             video_completed: false
+           }
+   
+           // Merge into lessons array so sidebar stays in sync
+           if (this.currentCourseCode) {
+             const course = this.courses.get(this.currentCourseCode)
+             if (course) {
+               const idx = course.lessons.findIndex(l => l.id === lessonId)
+               if (idx !== -1) {
+                 course.lessons[idx] = { ...course.lessons[idx], ...completeLesson }
+               }
+             }
+           }
+   
+           this.currentLesson = completeLesson
+   
+           // Reset exercise state for fresh lesson
+           this.exerciseAnswers = {}
+           this.exerciseResults = {}
+           this.showResults = {}
+           this.submittingAnswers = {}
+   
+           // Initialise answer slots
+           if (completeLesson.exercises?.length) {
+             completeLesson.exercises.forEach(q => {
+               this.exerciseAnswers[q.id] =
+                 q.type === 'multiple-choice' || q.type === 'true-false' ? null : ''
+               this.submittingAnswers[q.id] = false
+             })
+           }
+   
+           console.log('✅ Lesson detail loaded:', {
+             id: completeLesson.id,
+             title: completeLesson.title,
+             exercises: completeLesson.exercises.length,
+             hasVideo: !!completeLesson.video_url,
+             completed: completeLesson.completed
+           })
+   
+           return { success: true, data: lessonDetail }
+   
+         } catch (error) {
+           console.error('❌ loadLessonDetail error:', error)
+           return {
+             success: false,
+             error: error.response?.data?.detail || 'Failed to load lesson'
+           }
+         }
     },
 
     async submitAnswer(questionId, answer) {

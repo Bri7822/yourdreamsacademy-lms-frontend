@@ -48,9 +48,6 @@ export const useSearchStore = defineStore('search', {
       const buildActionUrl = (item, accessible) => {
         if (!accessible && item.requires_auth) return '/signup'
 
-        const isGuest   = !authStore.isAuthenticated
-        const basePath  = isGuest ? '/guest' : '/student'
-
         if (authStore.isAuthenticated && authStore.isStudent) {
           switch (item.type) {
             case 'course':
@@ -67,6 +64,7 @@ export const useSearchStore = defineStore('search', {
         }
 
         // Guest / unauthenticated
+        const basePath = '/guest'
         switch (item.type) {
           case 'course':
             return `${basePath}/courses/${item.code}`
@@ -89,23 +87,14 @@ export const useSearchStore = defineStore('search', {
         let promptSignup = false
 
         if (!requiresAuth) {
-          // Fully public content — anyone can access
           accessible = true
-
         } else if (authStore.isAuthenticated && (authStore.isStudent || authStore.isAdmin || authStore.isTeacher)) {
-          // Any authenticated user
           accessible   = true
           promptSignup = false
-
         } else if (!authStore.isAuthenticated && allowPreview) {
-          // ✅ Unauthenticated / guest with preview permission:
-          //    Mark accessible so the Preview button renders, not the lock.
-          //    The router guard handles session creation on first click.
           accessible   = true
           promptSignup = false
-
         } else {
-          // No access, no preview → show sign-up prompt
           accessible   = false
           promptSignup = true
         }
@@ -125,8 +114,8 @@ export const useSearchStore = defineStore('search', {
 
   actions: {
     async searchAllData(query) {
-      this.isLoading = true
-      this.error     = null
+      this.isLoading   = true
+      this.error       = null
       this.searchQuery = query
 
       try {
@@ -137,14 +126,14 @@ export const useSearchStore = defineStore('search', {
         let response
 
         if (authStore.isAuthenticated) {
+          // ✅ FIX: use /search/ (full results) not /search/suggestions/ (autocomplete only)
           console.log('🎯 Using authenticated search endpoint')
-          response = await axios.get('/api/search/', {
-            params:  { q: query },
-            headers: { Authorization: `Bearer ${authStore.accessToken}` }
+          response = await axios.get('/api/student/search/', {
+            params: { q: query }
           })
         } else {
           console.log('🎯 Using public search endpoint')
-          response = await axios.get('/api/search/public/', { params: { q: query } })
+          response = await axios.get('/api/student/search/public/', { params: { q: query } })
         }
 
         console.log('✅ Search API response:', response.data)

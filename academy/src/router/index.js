@@ -199,19 +199,12 @@ const routes = [
       },
 
       {
-        path: 'courses/:courseSlug/lessons',
-        name: 'student-course-lessons',
-        redirect: (to) => {
-          // Redirect to first lesson of the course
-          return {
-            name: 'student-lesson-detail',
-            params: {
-              courseSlug: to.params.courseSlug,
-              lessonId: 'first', // Will be handled by component to find first lesson
-            },
-            query: to.query,
-          }
-        },
+          path: 'courses/:courseSlug/lessons',
+          name: 'student-course-lessons',
+          redirect: (to) => ({
+            name: 'student-course-detail',
+            params: { courseSlug: to.params.courseSlug },
+          }),
       },
       {
         path: 'courses/:courseSlug/lessons/:lessonSlug',

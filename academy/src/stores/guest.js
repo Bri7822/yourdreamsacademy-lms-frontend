@@ -491,11 +491,21 @@ export const useGuestStore = defineStore('guest', {
       try {
         this.debugLog('Fetching guest courses...')
         const response = await axios.get('/api/student/guest/courses/')
-        this.debugLog('Guest courses response:', response.data)
-        return response.data
+        const data = response.data
+        this.debugLog('Guest courses response:', data)
+
+        // Normalise to always return { courses: [...] }
+        if (Array.isArray(data)) {
+          return { courses: data }
+        }
+        if (data && Array.isArray(data.courses)) {
+          return data
+        }
+        return { courses: [] }
+
       } catch (error) {
         console.error('Failed to fetch guest courses:', error)
-        throw error
+        return { courses: [] }
       }
     },
 
@@ -565,40 +575,40 @@ export const useGuestStore = defineStore('guest', {
       try {
         // Ensure we have a session
         if (!this.session?.session_id) {
-          console.log("No session, starting one...")
+          console.log('No session, starting one...')
           const result = await this.startGuestSession()
           if (!result.success) {
             throw new Error('Failed to start guest session')
           }
         }
 
-        // Use the slug-based endpoint
         const response = await axios.get(
           `/api/student/guest/courses/${courseSlug}/lessons/${lessonSlug}/`,
           {
-            params: {
-              session_id: this.session.session_id
-            },
+            params: { session_id: this.session.session_id },
             timeout: 10000
           }
         )
 
-        console.log('✅ Lesson loaded successfully')
+        console.log('✅ Guest lesson loaded successfully')
         return response.data
 
       } catch (error) {
-        console.error('❌ Failed to load lesson:', error)
+        console.error('❌ Failed to load guest lesson:', error)
 
-        // Try fallback - get course lessons and find the right one
+        // Fallback: get all course lessons and find by slug
         if (error.response?.status === 404 || error.response?.status === 500) {
           try {
-            console.log('🔄 Trying fallback method...')
+            console.log('🔄 Trying fallback — fetching all lessons...')
             const lessons = await this.getGuestCourseLessons(courseSlug)
-            const lesson = lessons.find(l => {
-              // Generate slug from title for comparison
-              const slug = l.title.toLowerCase()
+            const lessonsArray = Array.isArray(lessons) ? lessons : (lessons?.lessons || [])
+
+            const lesson = lessonsArray.find(l => {
+              const slug = l.title?.toLowerCase()
+                .replace(/[^\w\s-]/g, '')
                 .replace(/\s+/g, '-')
-                .replace(/[^\w-]/g, '')
+                .replace(/--+/g, '-')
+                .trim()
               return slug === lessonSlug
             })
 

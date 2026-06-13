@@ -1,3 +1,4 @@
+// composables/useSearch.js
 import { ref, computed } from 'vue'
 import { useSearchStore } from '@/stores/search'
 import { useRouter } from 'vue-router'
