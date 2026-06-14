@@ -398,7 +398,7 @@
                   <i class="fas fa-times"></i>
                 </button>
                 <button
-                  v-if="enrollment.status === 'approved' && enrollment.progress < 100"
+                  v-if="enrollment.status === 'approved' && enrollment.progress >= 100"
                   @click="markComplete(enrollment)"
                   class="action-btn complete-btn"
                   title="Mark Complete"
